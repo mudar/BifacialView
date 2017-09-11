@@ -62,6 +62,8 @@ public class BifacialView extends View {
     private Path arrowRight;
     private CornerPathEffect cornerPathEffect;
 
+    private BifacialTouchListener listener;
+
     public BifacialView(Context context) {
         super(context);
         init();
@@ -183,6 +185,9 @@ public class BifacialView extends View {
                 break;
         }
         delimiterPosition = (int) (x / 1);
+
+        notifyListenerIfAvailable();
+
         invalidate();
         return true;
     }
@@ -190,10 +195,13 @@ public class BifacialView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if (delimiterPosition > width) {
+            delimiterPosition = width;
+        } else if (delimiterPosition < 0) {
+            delimiterPosition = 0;
+        }
+
         if (delimiterPosition > 0 && drawableLeft != null) {
-            if (width - delimiterPosition < 0) {
-                delimiterPosition = width;
-            }
             drawableLeft.draw(canvas);
         }
 
@@ -219,9 +227,6 @@ public class BifacialView extends View {
         }
 
         if (width - delimiterPosition > 0 && drawableRight != null) {
-            if (delimiterPosition < 0) {
-                delimiterPosition = 0;
-            }
             canvas.clipRect(delimiterPosition + delimiterWidth/2, 0, width, height);
             drawableRight.draw(canvas);
         }
@@ -285,5 +290,24 @@ public class BifacialView extends View {
     public void setLeftText(String text) {
         this.leftText = text;
         invalidate();
+    }
+
+    public void setListener(BifacialTouchListener listener) {
+        this.listener = listener;
+    }
+
+    public void setDelimiterPosition(int percentage) {
+        delimiterPosition = (percentage * width / 100);
+
+        notifyListenerIfAvailable();
+
+        invalidate();
+    }
+
+    private void notifyListenerIfAvailable() {
+        int percentage = (delimiterPosition * 100 / width);
+        if (listener != null) {
+            listener.onDelimiterPositionUpdate(percentage);
+        }
     }
 }
